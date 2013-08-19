@@ -39,6 +39,8 @@ public class PullToRefreshListView extends PullToRefreshAdapterViewBase<ListView
 
     private FrameLayout mLvFooterLoadingFrame;
 
+    private OnListViewScrollListener mListener = null;
+
     private boolean mListViewExtrasEnabled;
 
     public PullToRefreshListView(Context context) {
@@ -274,6 +276,20 @@ public class PullToRefreshListView extends PullToRefreshAdapterViewBase<ListView
         }
     }
 
+    /**
+     * Interface used for notifying when the scroll has changed.
+     * 
+     * @author ovaskevich
+     * 
+     */
+    public interface OnListViewScrollListener {
+        public void onScroll(int offset);
+    }
+
+    public void setOnListViewScrollListener(OnListViewScrollListener listener) {
+        mListener = listener;
+    }
+
     protected class InternalListView extends ListView implements EmptyViewMethodAccessor {
 
         private boolean mAddedLvFooter = false;
@@ -372,6 +388,17 @@ public class PullToRefreshListView extends PullToRefreshAdapterViewBase<ListView
                 int lastScrollY = maybeBottomChild.getBottom() - getHeight() + invisibleChildren
                                   * maybeBottomChild.getHeight();
                 return Math.min(1.0f, lastScrollY / vertEdge);
+            }
+        }
+
+        @Override
+        protected void onScrollChanged(int l, int t, int oldl, int oldt) {
+            super.onScrollChanged(l, t, oldl, oldt);
+            if (mListener != null) {
+                final View child = getChildAt(0);
+                final int firstPos = getFirstVisiblePosition() - 1;
+                int scrollY = firstPos < 0 ? 0 : -child.getTop() + child.getHeight() * firstPos;
+                mListener.onScroll(scrollY);
             }
         }
     }
